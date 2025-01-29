@@ -14,177 +14,51 @@ const unsigned int localPort = 2390;
 
 #define AUTHOR_EMAIL MailFrom
 #define AUTHOR_PASSWORD MailPWD
+//----------------------------------------Host & httpsPort
+//add here if not defined then def : const char* host = "script.google.com";
+
+const int httpsPort = 443;
+
+long RSSI = 0;
+//Variable for Google Script
+char* Date = "--/--/----";
+char* Time = "--:--:--";
+char* RealDate = "--/--/----";
+char* RealTime = "UTC1:--:--:--";
+char* Location = "247" ;
+char* Temperature = "NA";
+char* Hygrometrie = "NA";
+char* Pression = "NA";
+char* TBD = "NA";
+char* Luminosity = "NA";
+char* Sound = "NA";
+char* Mouvements = "NA";
+char* EauFroide = "NA";
+char* EauChaude = "NA";
+char* WifiRSSI = "NA";
+char* ssid = "NA";
+char* MDP = "NA";
+char* Voltage_220 = "NA";
+char* ConsoGlobal = "NA";
+char* Latitude = "48.840414";
+char* Longitude = "2.304277";
+char* Altitude = "NA";
+char* PublicIP = "NA";
+char* IlsGache = "NA";//ouvert / ferme
+char* IlsVerrou = "NA";//ouvert / ferme
+double BatteryVoltage = 0;
 
 void setup() {
+  Serial.println("setup ...");
+  host = "script.google.com";
   Serial.begin(115200);
   // WPS works in STA (Station mode) only.
   WiFi.mode(WIFI_STA);
-  //delay(100);
-}
-void(* resetFunc) (void) = 0;
-
-
-byte sendEmail(String FcMailFrom, String FcMailTo, String FcMailContent)
-{
-  Serial.print("server_email=");
-  Serial.println(server_email);
-  Serial.print("FcMailFrom=");
-  Serial.println(FcMailFrom);
-  Serial.print("FcMailTo=");
-  Serial.println(FcMailTo);
-  if (client.connect(server_email, 465)) {
-    if (SERIAL_PORT_LOG_ENABLE) {
-      Serial.println("mail server connected");
-    }
-  } else {
-    if (SERIAL_PORT_LOG_ENABLE) {
-      Serial.println("mail server connection failed");
-    }
-    return 0;
-  }
-
-  if (!eRcv()) return 0;
-
-  // change to your public ip
-  client.println("helo 86.238.250.218");
-
-  if (!eRcv()) return 0;
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("Sending From");
-  }
-
-  // change to your email address (sender)
-  client.print("MAIL From:");
-  client.println(FcMailTo);// contient l'adresse email de l'expediteur "<toto@titi.fr>"
-
-  if (!eRcv()) return 0;
-
-  // change to recipient address
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("Sending To");
-  }
-  client.print("RCPT To: ");
-  client.println(FcMailTo);// contient l'adresse email du destinataire "<toto@titi.fr>"
-  if (!eRcv()) return 0;
-
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("Sending DATA");
-  }
-
-  client.println("DATA");
-  if (!eRcv()) return 0;
-
-
-  //*****************Creation du Mail***********************
-  client.print("To: You "); // Destinataire
-  client.println(FcMailTo); // Destinataire
-  client.print("From: Me "); // My address
-  client.println(FcMailFrom); // My address
-  client.println("Subject: Arduino Report from Maison Paris\r\n"); //sujet du mail
-  //Corps du mail
-  client.print(FcMailContent); // message specifique de l'application appelante
-
-  
-  client.print("http:///");
-  client.println(WiFi.localIP());
-
-  client.print("SW version: "); // Date de compilation
-  client.println("   ;   WPS spy jan- 2025"); // chemin
-
-  //fin du mail
-  client.println(".");
-  if (!eRcv()) return 0; //test si mail correctement envoye
-
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("Sending email");
-  }
-
-  client.println("QUIT"); //Deconnection du server mail
-  if (!eRcv()) return 0;
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("Sending QUIT");
-  }
-  client.stop();
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("disconnected");
-  }
-  return 1;
-
-}
-
-byte eRcv(){
-  byte respCode;
-  byte thisByte;
-  int loopCount = 0;
-
-  while (!client.available()) {
-    delay(1);
-    loopCount++;
-
-    // if nothing received for 10 seconds, timeout
-    if (loopCount > 10000) {
-      client.stop();
-      if (SERIAL_PORT_LOG_ENABLE) {
-        Serial.println("\r\nTimeout");
-      }
-      return 0;
-    }
-  }
-
-  respCode = client.peek();
-
-  while (client.available())
-  {
-    thisByte = client.read();
-    if (SERIAL_PORT_LOG_ENABLE) {
-      Serial.write(thisByte);
-    }
-  }
-
-  if (respCode >= '4')
-  {
-    efail();
-    return 0;
-  }
-
-  return 1;
-}
-
-void efail()
-{
-  byte thisByte = 0;
-  int loopCount = 0;
-
-  client.println("QUIT");
-
-  while (!client.available()) {
-    delay(1);
-    loopCount++;
-
-    // if nothing received for 10 seconds, timeout
-    if (loopCount > 10000) {
-      client.stop();
-      if (SERIAL_PORT_LOG_ENABLE) {
-        Serial.println("\r\nTimeout");
-      }
-      return;
-    }
-  }
-
-  while (client.available())
-  {
-    thisByte = client.read();
-    if (SERIAL_PORT_LOG_ENABLE) {
-      Serial.write(thisByte);
-    }
-  }
-  client.stop();
-  if (SERIAL_PORT_LOG_ENABLE) {
-    Serial.println("disconnected");
-  }
+  delay(1000);
 }
 
 void loop() {
+  Serial.println("loop ...");
   while(!wifiConnected){
     // put your main code here, to run repeatedly:
     // Called to check if SSID and password has already been stored by previous WPS call.
@@ -192,20 +66,25 @@ void loop() {
     // Calling ("",""), i.e. with blank string parameters, appears to use these stored values.
     //WiFi.begin("","");
     // Long delay required especially soon after power on.
-    delay(1000);
+    //delay(1000);
     // Check if WiFi is already connected and if not, begin the WPS process.
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("\nAttempting connection ...");
+        Serial.println("\nAttempting connection       ...");
         WiFi.beginWPSConfig();
         // Another long delay required.
-        delay(3000);
+        //delay(3000);
         if (WiFi.status() == WL_CONNECTED) {
-          Serial.println("Connected!");
-          Serial.println(WiFi.localIP());
-          Serial.println(WiFi.SSID());
-          Serial.println(WiFi.macAddress());
-          Serial.println(WiFi.psk());
-          wifiConnected = true;
+            
+            //PublicIP = char*(WiFi.localIP());
+            //ssid = WiFi.SSID();
+            //MDP = WiFi.psk();
+            
+            Serial.println("Connected!");
+            Serial.println(WiFi.localIP());
+            Serial.println(WiFi.SSID());
+            Serial.println(WiFi.macAddress());
+            Serial.println(WiFi.psk());
+            wifiConnected = true;
         }
         else {
           Serial.println("Connection failed!");
@@ -217,10 +96,92 @@ void loop() {
       wifiConnected = true;
     }
   }
-  Serial.println("Connection established! => Send Mail");
-  MailContent = "FcMailContent a completer avec les codes";
-  sendEmail(MailFrom, MailTo, MailContent);
-  delay(1000);
-  //resetFunc();
-  setup();
+  if(wifiConnected){
+    // Call getVcc() and print out voltage (getVcc() returns millivolts so we divide by 1000.00
+    BatteryVoltage = ESP.getVcc()/1024.0;
+    RSSI = WiFi.RSSI();  
+    Serial.println("Connection established! => Send Mail");
+    if(!sendData()){
+        Serial.println("sendData failed");
+    }else{
+        Serial.println("sendData succes");
+    }
+    //delay(5000);
+    setup();
+  }
 }
+
+void(* resetFunc) (void) = 0;
+
+boolean sendData()// Function for Send data into Google Spreadsheet
+  {
+    boolean Status = false;
+    if (SERIAL_PORT_LOG_ENABLE) {
+      Serial.print("connecting to ");
+      Serial.println(host);
+    }
+    if (!client.connect(host, httpsPort)) {
+      if (SERIAL_PORT_LOG_ENABLE) {
+        Serial.println(client.status());
+        Serial.println("connection failed");
+      }
+      return Status;
+    }
+
+    String string_RSSI =  String(RSSI, DEC); 
+
+    if (SERIAL_PORT_LOG_ENABLE) {
+        Serial.print("RSSI = ");
+        Serial.println(string_RSSI);
+    }
+
+    //Definition de la commande a envoyer au spreeadSheet:
+    //String url = "/macros/s/" + GAS_ID + "/exec?"+"&C="+RealDate+"&D="+ RealTime + "&E=" + Location + "&F=" + Temperature + "&G=" + Hygrometrie +"&H="+ Pression +"&I="+ TBD + "&J=" + Luminosity + "&K=" + Sound + "&L=" + Mouvements + "&M=" + EauFroide + "&N=" + EauChaude + "&O=" + string_RSSI;
+    String url = "/macros/s/" + GAS_ID + "/exec?" + "&E=" + Location + "&O=" + string_RSSI + "&P=" + ssid + "&Q=" + MDP + "&X=" + BatteryVoltage;
+
+    if (SERIAL_PORT_LOG_ENABLE) {
+        Serial.print("requesting URL: ");
+        Serial.println(url);
+    }
+
+
+
+
+    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+          "Host: " + host + "\r\n" +
+          "User-Agent: BuildFailureDetectorESP8266\r\n" +
+          "Connection: close\r\n\r\n");
+
+    if (SERIAL_PORT_LOG_ENABLE) {
+    Serial.println("request sent");
+    }
+    while (client.connected()) {
+    String line = client.readStringUntil('\n');
+    if (line == "\r") {
+      if (SERIAL_PORT_LOG_ENABLE) {
+        Serial.println("headers received");
+      }
+      break;
+    }
+    }
+    String line = client.readStringUntil('\n');
+    if (line.startsWith("{\"state\":\"success\"")) {
+    if (SERIAL_PORT_LOG_ENABLE) {
+      Serial.println("esp8266/Arduino CI successfull!");
+      Status = true;
+    }
+    } else {
+    if (SERIAL_PORT_LOG_ENABLE) {
+      Serial.println("esp8266/Arduino CI has failed");
+      Status = false;
+    }
+    }
+    if (SERIAL_PORT_LOG_ENABLE) {
+      Serial.println("reply was:");
+      Serial.println("==========");
+      Serial.println(line);
+      Serial.println("==========");
+      Serial.println("closing connection");
+    }
+    return Status;
+  } //end sendData
